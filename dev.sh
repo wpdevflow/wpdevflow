@@ -39,9 +39,9 @@ container_status() {
     fi
 
     # Define column widths
-    local name_width=20
+    local name_width=13
     local status_width=15
-    local ports_width=25
+    local ports_width=32
 
     # Generate border line (matches total table width of 70 characters)
     local line=$(printf "%70s" " " | tr ' ' '─')
@@ -54,39 +54,38 @@ container_status() {
 
     # Process containers
     while IFS='|' read -r orig_name orig_status orig_ports; do
-        # Status indicator
-        local status_dot="${YELLOW}●${NC}"
-        [[ "$orig_status" == *"Up"* ]] && status_dot="${GREEN}●${NC}"
-        [[ "$orig_status" == *"Exited"* ]] && status_dot="${RED}●${NC}"
-
-        # Name formatting
-        local name=$orig_name
+        # Strip 'wpdevflow_' prefix from name
+        local name="${orig_name#wpdevflow-}"
+        
         if [[ ${#name} -gt $name_width ]]; then
             name="${name:0:$((name_width - 3))}..."
         fi
 
-        # Status formatting
+        # Status
         local status=$orig_status
+        local status_dot="${YELLOW}●${NC}"
+        [[ "$status" == *"Up"* ]] && status_dot="${GREEN}●${NC}"
+        [[ "$status" == *"Exited"* ]] && status_dot="${RED}●${NC}"
         if [[ ${#status} -gt $status_width ]]; then
             status="${status:0:$((status_width - 3))}..."
         fi
 
-        # Ports formatting
-        local ports=$orig_ports
+        # Clean up ports by removing '0.0.0.0:' patterns
+        local ports=$(echo "$orig_ports" | sed 's/0.0.0.0://g')
         if [[ ${#ports} -gt $ports_width ]]; then
             ports="${ports:0:$((ports_width - 3))}..."
         fi
 
-        # Print row with precise spacing
+        # Print row
         printf "${CYAN}│ ${NC}%-${name_width}s ${CYAN}│ ${NC}%b%-$((status_width - 1))s ${CYAN}│ ${NC}%-${ports_width}s  ${CYAN}│${NC}\n" \
             "$name" "$status_dot " "$status" "$ports"
-
 
     done <<< "$containers"
 
     printf "${CYAN}└%s┘${NC}\n" "$line"
     echo
 }
+
 
 
 # Function to display menu
