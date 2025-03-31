@@ -5,6 +5,7 @@ RED='\033[1;31m'
 GREEN='\033[1;32m'
 BLUE='\033[1;34m'
 YELLOW='\033[1;33m'
+GRAY='\033[0;90m'
 CYAN='\033[1;36m'
 MAGENTA='\033[1;35m'
 NC='\033[0m' # No Color
@@ -37,20 +38,20 @@ container_status() {
     local containers=$(docker ps --format "{{.Names}}|{{.Status}}|{{.Ports}}" --filter "name=${project_name}")
 
     if [[ -z "$containers" ]]; then
-        echo -e "${YELLOW}⚠️  No containers are currently running${NC}"
+        # echo -e "${YELLOW}⚠️  No containers are currently running${NC}"
         return
     fi
 
     # Define column widths
     local name_width=13
     local status_width=15
-    local ports_width=32
+    local ports_width=47
 
     # Generate border line (matches total table width of 70 characters)
-    local line=$(printf "%70s" " " | tr ' ' '─')
+    local line=$(printf "%$((name_width + status_width + ports_width + 10))s" " " | tr ' ' '─')
 
     # Print header
-    printf "\n${CYAN}📦 Container Status:${NC}\n"
+    printf "\n${CYAN} 📦 Container Status:${NC}\n"
     printf "${CYAN}┌%s┐${NC}\n" "$line"
     printf "${CYAN}│ ${GREEN}%-${name_width}s${CYAN} │ ${GREEN}%-$((status_width + 1))s${CYAN} │ ${GREEN}%-$((ports_width + 1))s${CYAN} │${NC}\n" "Name" "Status" "Ports"
     printf "${CYAN}├%s┤${NC}\n" "$line"
@@ -60,6 +61,9 @@ container_status() {
         # Strip 'project_name-' prefix from name
         local name="${orig_name#${project_name}-}"
         
+        name="${name%-[0-9]}"
+
+
         if [[ ${#name} -gt $name_width ]]; then
             name="${name:0:$((name_width - 3))}..."
         fi
@@ -95,31 +99,33 @@ container_status() {
 show_menu() {
     clear
     echo -e "${LOGO}"
-    echo -e "${CYAN}═══════════ WordPress Development Environment ═══════════${NC}\n"
 
     # Show container status at the top
     container_status
     echo
 
+    menu_title="${CYAN}┌─────────────────────────────────────────────────────────────────────────────────────┐\n│${MAGENTA} 🚀 WORDPRESS DEVELOPMENT OPTIONS 🚀${CYAN}                                                 │\n└─────────────────────────────────────────────────────────────────────────────────────┘${NC}\n"
+    echo -e "$menu_title"
+
     options=(
-        "🚀 Start Containers"
-        "🛑 Stop Containers"
-        "♻️  Restart Containers"
-        "📋 View Logs"
-        "🐚 Open WordPress Shell"
-        "🐬 Open MySQL Shell"
-        "📦 Install Dependencies"
-        "🛠️  Build Theme Assets"
-        "👀 Watch Theme Assets"
-        "🧹 Clean Docker Environment"
-        "❌ Exit"
+        "🚀 Start Containers ${GRAY}(docker compose up -d)${NC}"
+        "🛑 Stop Containers ${GRAY}(docker compose down)${NC}"
+        "♻️  Restart Containers ${GRAY}(docker compose restart)${NC}"
+        "📋 View Docker Logs ${GRAY}(live logs, Ctrl+C to exit)${NC}"
+        "🐚 WordPress Shell ${GRAY}(bash into theme directory)${NC}"
+        "🐬 MySQL Shell ${GRAY}(access WordPress database)${NC}"
+        "📦 Install Theme Dependencies ${GRAY}(composer & npm)${NC}"
+        "🛠️  Build Theme Assets ${GRAY}(npm run build)${NC}"
+        "👀 Watch Theme Assets ${GRAY}(npm run dev)${NC}"
+        "🧹 Clean Docker Environment ${GRAY}(remove containers & volumes)${NC}"
+        "❌ Exit ${GRAY}(quit script)${NC}"
     )
 
     for i in "${!options[@]}"; do
-        printf "${GREEN}%2d)${NC} ${options[$i]}\n" "$((i+1))"
+        printf " ${GREEN}%2d)${NC} ${options[$i]}\n" "$((i+1))"
     done
 
-    echo -ne "\n${YELLOW}➜ Enter your selection: ${NC}"
+    echo -ne "\n${YELLOW} ➜ Enter your selection: ${NC}"
 }
 
 confirm_action() {
