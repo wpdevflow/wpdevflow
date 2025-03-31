@@ -31,7 +31,10 @@ container_status() {
         return
     fi
 
-    local containers=$(docker ps --format "{{.Names}}|{{.Status}}|{{.Ports}}" --filter "name=wpdevflow")
+    # Determine project name (default to current directory name if not set)
+    local project_name="${COMPOSE_PROJECT_NAME:-$(basename "$PWD")}"
+
+    local containers=$(docker ps --format "{{.Names}}|{{.Status}}|{{.Ports}}" --filter "name=${project_name}")
 
     if [[ -z "$containers" ]]; then
         echo -e "${YELLOW}⚠️  No containers are currently running${NC}"
@@ -54,8 +57,8 @@ container_status() {
 
     # Process containers
     while IFS='|' read -r orig_name orig_status orig_ports; do
-        # Strip 'wpdevflow_' prefix from name
-        local name="${orig_name#wpdevflow-}"
+        # Strip 'project_name-' prefix from name
+        local name="${orig_name#${project_name}-}"
         
         if [[ ${#name} -gt $name_width ]]; then
             name="${name:0:$((name_width - 3))}..."
