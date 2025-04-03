@@ -43,8 +43,8 @@ container_status() {
     fi
 
     # Define column widths
-    local name_width=13
-    local status_width=15
+    local name_width=10
+    local status_width=18
     local ports_width=47
 
     # Generate border line (matches total table width of 70 characters)
